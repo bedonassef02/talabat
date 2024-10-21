@@ -1,8 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AuthServiceModule } from './auth-service.module';
+import { MicroserviceOptions } from '@nestjs/microservices';
+import { createMicroserviceOptions } from '@app/common/microservice/microservice-options.helper';
+import { Queue } from '@app/common/microservice/enums/queue.enum';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AuthServiceModule);
-  await app.listen(process.env.port ?? 3000);
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AuthServiceModule,
+    createMicroserviceOptions(Queue.AUTH),
+  );
+  await app.listen();
 }
 bootstrap();
