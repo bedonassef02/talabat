@@ -1,1 +1,1 @@
-export const RMQ_URL: string = 'amqp://localhost:5672';
+export const RMQ_URL: string = process.env.RMQ_URL || 'amqp://localhost:5672';
