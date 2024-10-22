@@ -5,15 +5,19 @@ import { ClientProxy } from '@nestjs/microservices';
 import { UserPattern } from '@app/common/microservice/patterns/user.pattern';
 import { HashingService } from '../hashing/hashing.service';
 import { RpcConflictException } from '@app/common/exceptions/rpc-conflict.exception';
-import { firstValueFrom, from, mergeMap, Observable } from 'rxjs';
+import { firstValueFrom, from, map, mergeMap, Observable } from 'rxjs';
 import { User } from '../../../users-service/src/users/entities/user.entity';
+import { SignInDto } from './dto/sign-in.dto';
+import { RpcNotFoundException } from '@app/common/exceptions/rpc-not-found.exception';
+import { RpcBadRequestException } from '@app/common/exceptions/rpc-bad-request.exception';
 
 @Injectable()
 export class AuthenticationService {
   constructor(
     @Inject(Service.USERS) private readonly usersService: ClientProxy,
     private readonly hashingService: HashingService,
-  ) {}
+  ) {
+  }
 
   signUp(signUpDto: SignUpDto): Observable<User> {
     return this.checkIsEmailExist(signUpDto.email).pipe(
@@ -26,7 +30,17 @@ export class AuthenticationService {
     );
   }
 
-  private checkIsEmailExist(email: string): Observable<User> {
+  signIn(signInDto: SignInDto) {
+    return this.checkIsEmailExist(signInDto.email).pipe(
+      mergeMap((user: User | null) => {
+        if (!user) {
+          throw new RpcNotFoundException('Email not found');
+        }
+        return this.isPasswordCorrect(signInDto.password, user.password);
+      }));
+  }
+
+  private checkIsEmailExist(email: string): Observable<User | null> {
     return this.usersService.send<User | null>(
       UserPattern.FIND_BY_EMAIL,
       email,
@@ -37,6 +51,17 @@ export class AuthenticationService {
     signUpDto.password = await this.hashingService.hash(signUpDto.password);
     return await firstValueFrom(
       this.usersService.send<User>(UserPattern.CREATE, signUpDto),
+    );
+  }
+
+  private isPasswordCorrect(password: string, userPassword: string): Observable<boolean> {
+    return from(this.hashingService.compare(password, userPassword)).pipe(
+      map((isPasswordCorrect: boolean) => {
+        if (!isPasswordCorrect) {
+          throw new RpcBadRequestException('Incorrect password');
+        }
+        return true;
+      }),
     );
   }
 }

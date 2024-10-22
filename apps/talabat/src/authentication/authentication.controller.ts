@@ -3,6 +3,7 @@ import { AuthPattern } from '@app/common/microservice/patterns/auth.pattern';
 import { Body, Controller, Inject, Post } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SignUpDto } from 'apps/auth-service/src/authentication/dto/sign-up.dto';
+import { SignInDto } from '../../../auth-service/src/authentication/dto/sign-in.dto';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -13,5 +14,10 @@ export class AuthenticationController {
   @Post('sign-up')
   signUp(@Body() signUpDto: SignUpDto) {
     return this.authService.send(AuthPattern.SIGN_UP, signUpDto);
+  }
+
+  @Post('sign-in')
+  signIn(@Body() signInDto: SignInDto) {
+    return this.authService.send(AuthPattern.SIGN_IN, signInDto);
   }
 }
