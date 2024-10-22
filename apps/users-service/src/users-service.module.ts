@@ -5,10 +5,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from '@app/common/interceptors/logging.interceptor';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot(),
-    UsersModule,
-  ],
+  imports: [ConfigModule.forRoot(), UsersModule],
   providers: [
     {
       provide: APP_INTERCEPTOR,
