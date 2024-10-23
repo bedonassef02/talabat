@@ -4,33 +4,60 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { TokenService } from '../../tokens/token.service';
-import { REQUEST_USER_KEY } from '../../auth.constants';
-import { ActiveUserData } from '../../interfaces/active-user-data.interface';
+import { AuthType } from '../enums/auth-type.enum';
+import { AccessTokenGuard } from './access-token.guard';
+import { Reflector } from '@nestjs/core';
+import { AUTH_TYPE_KEY } from '../decorators/auth.decorator';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
-  constructor(private readonly tokenService: TokenService) {}
+  private static readonly defaultAuthType = AuthType.Bearer;
+  private readonly authTypeGuardMap: Record<
+    AuthType,
+    CanActivate | CanActivate[]
+  > = {
+    [AuthType.Bearer]: this.accessTokenGuard,
+    [AuthType.None]: { canActivate: () => true },
+  };
 
-  canActivate(context: ExecutionContext) {
-    const request: Request = context.switchToHttp().getRequest();
-    const token: string = this.extractTokenFromHeader(request);
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly accessTokenGuard: AccessTokenGuard,
+  ) {}
 
-    if (!token) {
-      throw new UnauthorizedException('No token provided');
-    }
+  async canActivate(context: ExecutionContext) {
+    const authTypes: AuthType[] = this.getAuthTypes(context);
 
-    const payload: ActiveUserData = await this.tokenService.verify(token);
-    if (!payload) {
-      throw new UnauthorizedException('Invalid token');
-    }
-    request[REQUEST_USER_KEY] = payload;
-    return true;
+    const guards: CanActivate[] = authTypes
+      .map((type: AuthType) => this.authTypeGuardMap[type])
+      .flat();
+    return this.checkCanActivate(guards, context);
   }
 
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+  private async checkCanActivate(
+    guards: CanActivate[],
+    context: ExecutionContext,
+  ) {
+    let error = new UnauthorizedException();
+    for (const guard of guards) {
+      const canActivate = await Promise.resolve(
+        guard.canActivate(context),
+      ).catch((err) => {
+        error = err;
+      });
+      if (canActivate) {
+        return true;
+      }
+    }
+    throw new UnauthorizedException(error);
+  }
+
+  private getAuthTypes(context: ExecutionContext): AuthType[] {
+    return (
+      this.reflector.getAllAndOverride<AuthType[]>(AUTH_TYPE_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? [AuthenticationGuard.defaultAuthType]
+    );
   }
 }

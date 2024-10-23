@@ -9,7 +9,7 @@ export abstract class TokenService {
   abstract verify(token: string): Promise<ActiveUserData>;
   // abstract refreshTokens(refreshToken: string): Promise<Tokens>;
   protected abstract signToken<T>(
-    userId: number,
+    userId: string,
     expiresIn: number,
     payload?: T,
   ): Promise<string>;

@@ -45,6 +45,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/common/tsconfig.lib.json"
       }
+    },
+    "profile-service": {
+      "type": "application",
+      "root": "apps/profile-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/profile-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/profile-service/tsconfig.app.json"
+      }
     }
   }
 }

@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserPattern } from '@app/common/microservice/patterns/user.pattern';
 import { SignUpDto } from 'apps/auth-service/src/authentication/dto/sign-up.dto';
 import { User } from './entities/user.entity';
+import { UserFieldsDto } from './dto/user-fields.dto';
 
 @Controller()
 export class UsersController {
@@ -21,8 +22,8 @@ export class UsersController {
   }
 
   @MessagePattern(UserPattern.FIND_ONE)
-  findOne(@Payload() id: string): Promise<User | null> {
-    return this.usersService.findOne(id);
+  findOne(@Payload() fieldsDto: UserFieldsDto): Promise<User | null> {
+    return this.usersService.findOne(fieldsDto);
   }
 
   @MessagePattern(UserPattern.FIND_BY_EMAIL)

@@ -4,10 +4,9 @@ import { Tokens } from './tokens.interface';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'crypto';
 import jwtConfig from '../config/jwt.config';
-import { Inject } from '@nestjs/common';
+import { Inject, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
-import { Promise } from 'mongoose';
 
 export class JwtTokenService extends TokenService {
   constructor(
@@ -22,7 +21,7 @@ export class JwtTokenService extends TokenService {
     const refreshTokenId: string = randomUUID();
     const [accessToken, refreshToken] = await Promise.all([
       this.signToken<Partial<ActiveUserData>>(
-        user.id,
+        user._id.toString(),
         this.jwtConfiguration.accessTokenTtl,
         {
           email: user.email,
@@ -30,7 +29,7 @@ export class JwtTokenService extends TokenService {
         },
       ),
       this.signToken<{ refreshTokenId: string }>(
-        user.id,
+        user._id.toString(),
         this.jwtConfiguration.refreshTokenTtl,
         {
           refreshTokenId,
@@ -41,7 +40,7 @@ export class JwtTokenService extends TokenService {
   }
 
   protected async signToken<T>(
-    userId: number,
+    userId: string,
     expiresIn: number,
     payload?: T,
   ): Promise<string> {
@@ -63,7 +62,7 @@ export class JwtTokenService extends TokenService {
     try {
       return this.jwtService.verifyAsync(token, this.jwtConfiguration);
     } catch {
-      return null;
+      throw new UnauthorizedException('Invalid token');
     }
   }
 }

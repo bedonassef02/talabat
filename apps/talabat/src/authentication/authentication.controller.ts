@@ -4,7 +4,10 @@ import { Body, Controller, Inject, Post } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SignUpDto } from 'apps/auth-service/src/authentication/dto/sign-up.dto';
 import { SignInDto } from '../../../auth-service/src/authentication/dto/sign-in.dto';
+import { Auth } from '../../../auth-service/src/authentication/decorators/auth.decorator';
+import { AuthType } from '../../../auth-service/src/authentication/enums/auth-type.enum';
 
+@Auth(AuthType.None)
 @Controller('authentication')
 export class AuthenticationController {
   constructor(
