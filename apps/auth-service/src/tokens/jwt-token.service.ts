@@ -7,6 +7,7 @@ import jwtConfig from '../config/jwt.config';
 import { Inject } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
+import { Promise } from 'mongoose';
 
 export class JwtTokenService extends TokenService {
   constructor(
@@ -56,5 +57,13 @@ export class JwtTokenService extends TokenService {
         expiresIn,
       },
     );
+  }
+
+  verify(token: string): Promise<ActiveUserData> {
+    try {
+      return this.jwtService.verifyAsync(token, this.jwtConfiguration);
+    } catch {
+      return null;
+    }
   }
 }
